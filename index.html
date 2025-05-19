@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="style.css">
+  <title>Monochromon Shop Minigame</title>
+  <style>
+
+  </style>
+</head>
+<body>
+
+<div id="startScreen">
+<h1>Monochrome Shop</h1>
+  <button class="start-button" onclick="startGame()">Start</button>
+</div>
+
+<div class="ui" id="gameUI">
+
+  <h1>Monochrome Shop 2025</h1>
+
+  <div class="status">
+    <p style="display: none;"><strong>Time:</strong> <span id="time">08:00</span></p>
+    <p style="display: none;"><strong>Customers Left:</strong> <span id="customers">20</span></p>
+    <p > <strong>Profit:</strong> <span id="profit">0</span> bits</p>
+  </div>
+
+    <div class="customer-portrait">
+    <img id="customerImage" src="images/placeholder.png" alt="Customer" />
+  </div>
+
+  <div class="dialogue" id=dialogueBox>
+    
+
+  <div class="input-group" id="inputGroup">
+    <p><strong><span id="customer" class="customer">--</span></strong></p>
+    <p id="customerRequest">--</p>
+    <button onclick="respondToRequest()">Okay</button>
+  </div>
+
+  <div class="negotiation-group" id="negotiationGroup" style="display:none;">
+    <p>What will you suggest?</p>
+    <button onclick="makeOffer('raise')">Raise Price</button>
+    <button onclick="makeOffer('keep')">Keep Price</button>
+    <button onclick="makeOffer('lower')">Lower Price</button>
+  </div>
+
+  <div class="final-decision" id="finalDecisionGroup" style="display:none;">
+    <p id="reaction"></p>
+    <button onclick="finalizeSale()">Offer For</button>
+    <button onclick="renegotiate()">Let me think</button>
+  </div>
+
+  <div class="message" id="message"></div>
+
+<div id="renegotiationMessage" style="display:none;">
+  <p><strong><span id="renegotiationCustomer" class="customer">--</span></strong></p>
+  <p id="renegotiationText">That's way too high!</p>
+  <button onclick="returnToNegotiation()">Umm Okay Then..</button>
+</div>
+
+</div>
+
+</div>
+
+<script>
+let timeMinutes = 480;
+let customersLeft = 20;
+let profit = 0;
+const goal = 3072;
+
+const imageMap = {
+  Goburimon: 'Goblimon.png',
+  Gotsumon: 'gotsumon.png',
+  Muchomon: 'muchomon.png',
+  Weedmon: 'weedmon.png',
+  Monochromon: 'monochromon.png'
+};
+
+const customers = ['Goburimon', 'Gotsumon', 'Muchomon', 'Weedmon'];
+
+const items = [
+  { name: 'Meat', base: 50, profit: 15 },
+  { name: 'Portable Potty', base: 300, profit: 90 },
+  { name: 'Medicine', base: 1000, profit: 300 }
+];
+
+const customerWeights = [
+  { name: 'Goburimon', weight: 33.3 },
+  { name: 'Gotsumon', weight: 33.3 },
+  { name: 'Weedmon', weight: 22.3 },
+  { name: 'Muchomon', weight: 11.1 }
+];
+
+const itemWeightsByCustomer = {
+  Goburimon: [
+    { name: 'Meat', weight: 35 },
+    { name: 'Portable Potty', weight: 50 },
+    { name: 'Medicine', weight: 15 }
+  ],
+  Gotsumon: [
+    { name: 'Meat', weight: 30 },
+    { name: 'Portable Potty', weight: 55 },
+    { name: 'Medicine', weight: 15 }
+  ],
+  Weedmon: [
+    { name: 'Meat', weight: 50 },
+    { name: 'Portable Potty', weight: 35 },
+    { name: 'Medicine', weight: 15 }
+  ],
+  Muchomon: [
+    { name: 'Meat', weight: 32 },
+    { name: 'Portable Potty', weight: 35 },
+    { name: 'Medicine', weight: 33 }
+  ]
+};
+
+const strategyThresholds = {
+  Goburimon: [1, 0.99, 0.97, 0.95, 0.85, 0.75, 0.65, 0.55, 0.45],
+  Gotsumon: [0.96, 0.94, 0.92, 0.9, 0.7, 0.5, 0.3, 0.1, 0.01],
+  Weedmon:  [0.95, 0.9, 0.85, 0.8, 0.5, 0.2, 0.02, 0.02, 0.02],
+  Muchomon: [0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45]
+};
+
+const leaveChances = {
+  Goburimon: [5, 15, 50],
+  Gotsumon: [10, 30, 70],
+  Weedmon:  [20, 60, 90],
+  Muchomon: [50, 50, 100]
+};
+
+let currentCustomer = '';
+let currentItem = null;
+let currentPrice = 0;
+let currentProfit = 0;
+let currentStrategy = 'match';
+let negotiationCount = 0;
+let hasShownMonochromon = false;
+
+document.getElementById('customerImage').src = imageMap['Monochromon'];
+
+function formatTime(minutes) {
+  const hrs = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const mins = String(minutes % 60).padStart(2, '0');
+  return `${hrs}:${mins}`;
+}
+
+function updateDisplay() {
+  document.getElementById('time').innerText = formatTime(timeMinutes);
+  document.getElementById('customers').innerText = customersLeft;
+  document.getElementById('profit').innerText = profit;
+  document.getElementById('customer').innerText = currentCustomer || '';
+}
+
+function chooseWeighted(weights) {
+  const totalWeight = weights.reduce((sum, w) => sum + w.weight, 0);
+  const rand = Math.random() * totalWeight;
+  let running = 0;
+  for (let entry of weights) {
+    running += entry.weight;
+    if (rand <= running) return entry.name || entry;
+  }
+}
+
+function chooseWeightedCustomer() {
+  return chooseWeighted(customerWeights);
+}
+
+function chooseWeightedItem(customerName) {
+  const weights = itemWeightsByCustomer[customerName];
+  if (!weights) return null;
+  return items.find(i => i.name === chooseWeighted(weights));
+}
+
+function startGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameUI').style.display = 'block';
+  document.querySelector('.dialogue').style.display = 'block';
+showResultSequence([
+  `<span class="shop-request">Can you work in my shop? It'll be good for me.</span>`
+], nextCustomer);
+}
+
+function nextCustomer() {
+  if (customersLeft <= 0) {
+    endGame();
+    return;
+  }
+
+  negotiationCount = 0;
+
+  if (customersLeft <= 10 && !hasShownMonochromon) {
+    hasShownMonochromon = true;
+    currentCustomer = 'Monochromon';
+    document.getElementById('customerImage').src = imageMap['Monochromon'];
+    const msg = profit >= goal / 2
+      ? "Monochromon says: You're doing well, keep up the good work."
+      : "Monochromon says: There's still plenty of work to be done.";
+    showResultSequence([msg], nextCustomer);
+    return;
+  }
+
+  currentCustomer = chooseWeightedCustomer();
+  currentItem = chooseWeightedItem(currentCustomer);
+  if (!currentItem) {
+    console.warn("No item found for customer:", currentCustomer);
+    nextCustomer();
+    return;
+  }
+
+  document.getElementById('customerImage').src = imageMap[currentCustomer];
+  document.getElementById('customerRequest').innerText = `"I need some ${currentItem.name.toLowerCase()}!"`;
+
+  document.getElementById('inputGroup').style.display = 'block';
+  document.getElementById('negotiationGroup').style.display = 'none';
+  document.getElementById('finalDecisionGroup').style.display = 'none';
+  document.getElementById('message').innerText = '';
+  document.getElementById('reaction').innerText = '';
+
+  updateDisplay();
+}
+
+function respondToRequest() {
+  document.getElementById('inputGroup').style.display = 'none';
+  document.getElementById('negotiationGroup').style.display = 'block';
+}
+
+function makeOffer(strategy) {
+  const raisePercents = [10, 20, 30, 40, 50];
+  const lowerPercents = [10, 20, 30];
+  const base = currentItem.base;
+  const cost = base - currentItem.profit;
+
+  let percent = 0;
+  if (strategy === 'raise') {
+    percent = raisePercents[Math.floor(Math.random() * raisePercents.length)];
+  } else if (strategy === 'lower') {
+    percent = -lowerPercents[Math.floor(Math.random() * lowerPercents.length)];
+  }
+
+  currentPrice = Math.floor(base * (1 + percent / 100));
+  currentProfit = currentPrice - cost;
+  currentStrategy = strategy;
+
+let increasePercent = 0;
+const basePrice = currentItem.base;
+
+if (strategy === 'raise') {
+  const raisePercents = [10, 20, 30, 40, 50];
+  increasePercent = raisePercents[Math.floor(Math.random() * raisePercents.length)];
+} else if (strategy === 'lower') {
+  const lowerPercents = [10, 20, 30];
+  increasePercent = -lowerPercents[Math.floor(Math.random() * lowerPercents.length)];
+}
+
+currentPrice = Math.floor(basePrice * (1 + increasePercent / 100));
+currentProfit = currentPrice - (basePrice - currentItem.profit);
+currentStrategy = strategy;
+
+// Determine customer reaction
+let reaction = 'looks neutral';
+if (strategy === 'lower' || currentPrice === basePrice) {
+  reaction = 'looks thrilled';
+} else if (increasePercent === 10 || increasePercent === 20) {
+  reaction = 'looks happy';
+} else if (increasePercent === 30 || increasePercent === 40) {
+  reaction = 'looks disappointed';
+} else if (increasePercent === 50) {
+  reaction = 'looks angry';
+}
+
+  document.getElementById('negotiationGroup').style.display = 'none';
+  document.getElementById('finalDecisionGroup').style.display = 'block';
+document.getElementById('reaction').innerHTML = `<span class="customer-name">${currentCustomer}</span> ${reaction} with your offer`;
+
+  document.querySelector('#finalDecisionGroup button').innerText = `Offer for ${currentPrice} bits`;
+
+}
+
+function finalizeSale() {
+  if (!currentItem || !currentCustomer || currentPrice === null) {
+    console.warn("Missing item or customer info.");
+    return;
+  }
+
+  negotiationCount++;
+  timeMinutes -= 24;
+
+  const percentDiff = Math.round(((currentPrice - currentItem.base) / currentItem.base) * 100);
+  const brackets = [-30, -20, -10, 0, 10, 20, 30, 40, 50];
+  const bracket = brackets.reduce((prev, curr) =>
+    Math.abs(curr - percentDiff) < Math.abs(prev - percentDiff) ? curr : prev
+  );
+  const idx = Math.min(brackets.indexOf(bracket), strategyThresholds[currentCustomer].length - 1);
+  const acceptChance = strategyThresholds[currentCustomer][idx];
+  const leaveChanceSet = leaveChances[currentCustomer];
+  const leaveChance = leaveChanceSet ? leaveChanceSet[Math.min(negotiationCount - 1, 2)] / 100 : 0;
+
+  const roll = Math.random();
+
+  if (roll <= acceptChance) {
+    profit += currentProfit;
+    customersLeft--;
+    showResultSequence([
+  `<span class="customer-name">${currentCustomer}</span> buys the <span class="item-name">${currentItem.name.toLowerCase()}</span> for <span class="profit">${currentProfit} bits</span> profit.`
+], nextCustomer);
+  } else if (roll <= acceptChance + leaveChance) {
+    customersLeft = Math.max(0, customersLeft - 2);
+showResultSequence([
+  `<span class="customer-name">${currentCustomer}</span> <span class="storm-out">storms out</span>.`,
+  `<span class="quiet">It's quiet in here now...</span>`
+], nextCustomer);
+  } else {
+    document.getElementById('finalDecisionGroup').style.display = 'none';
+    document.getElementById('negotiationGroup').style.display = 'none';
+    document.getElementById('renegotiationCustomer').innerText = currentCustomer;
+    document.getElementById('renegotiationMessage').style.display = 'block';
+  }
+
+  updateDisplay();
+}
+
+function returnToNegotiation() {
+  document.getElementById('renegotiationMessage').style.display = 'none';
+  document.getElementById('negotiationGroup').style.display = 'block';
+  document.getElementById('reaction').innerText = '';
+}
+
+function renegotiate() {
+  // Hide the renegotiation message
+  document.getElementById('renegotiationMessage').style.display = 'none';
+
+  // Reset the final decision area (just in case)
+  document.getElementById('finalDecisionGroup').style.display = 'none';
+
+  // Return to the negotiation options
+  document.getElementById('negotiationGroup').style.display = 'block';
+
+  // Clear any reaction text
+  document.getElementById('reaction').innerText = '';
+}
+
+function showResultSequence(messages, after = nextCustomer) {
+  const msgEl = document.getElementById('message');
+  document.getElementById('reaction').innerText = '';
+  document.getElementById('customerRequest').innerText = '';
+  document.getElementById('inputGroup').style.display = 'none';
+  document.getElementById('negotiationGroup').style.display = 'none';
+  document.getElementById('finalDecisionGroup').style.display = 'none';
+
+  const customerImage = document.getElementById('customerImage');
+  const customerCard = document.querySelector('.card'); // Adjust selector if needed
+
+  let btn = document.getElementById('continueButton');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'continueButton';
+    btn.className = 'continue-button';
+    btn.innerText = 'Okay';
+    msgEl.parentElement.appendChild(btn);
+  }
+
+  let i = 0;
+  btn.onclick = () => {
+    if (i < messages.length) {
+      const message = messages[i++];
+      msgEl.innerHTML = message;
+
+      // Hide image and card on certain messages
+      if (
+        message === "It's quiet in here now..." ||
+        message.includes("storms out") ||
+        message.includes("buys the")
+      ) {
+        customerImage.style.display = 'none';
+        if (customerCard) customerCard.style.display = 'none';
+      }
+
+    } else {
+      btn.remove();
+      msgEl.innerHTML = '';
+
+      // Show image and card again
+      customerImage.style.display = 'block';
+      if (customerCard) customerCard.style.display = 'block';
+
+      after();
+    }
+  };
+
+  btn.click();
+}
+
+function endGame() {
+  currentCustomer = 'Monochromon';
+  document.getElementById('customerImage').src = imageMap['Monochromon'];
+  const result = profit >= goal ? 
+    "You actually did it. Maybe there's hope for the island yet." :
+    profit >= goal / 2 ? 
+    "Not bad. You're improving, but there's room for growth." :
+    "That performance was underwhelming. You need more practice.";
+  showResultSequence([result, `You made ${profit} bits.`, "Come back tomorrow to try again"], restartGame);
+}
+
+function restartGame() {
+  location.reload();
+}
+</script>
+</body>
+</html>
+
