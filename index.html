@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="style.css">
-  <title>Monochromon Shop Minigame</title>
+  <title>Monochromon Shop - Digimon World Minigame</title>
   <style>
 
   </style>
@@ -18,8 +18,10 @@
 </div>
 
 <div class="ui" id="gameUI">
-
-  <h1>Monochrome Shop 2025</h1>
+<header>
+<h1>Monochrome Shop 2025</h1>
+</header>
+  
 
   <div class="status">
     <p style="display: none;"><strong>Time:</strong> <span id="time">08:00</span></p>
@@ -30,6 +32,8 @@
     <div class="customer-portrait">
     <img id="customerImage" src="images/placeholder.png" alt="Customer" />
   </div>
+
+  <div id="darkOverlay"></div>
 
   <div class="dialogue" id=dialogueBox>
     
@@ -178,8 +182,10 @@ function startGame() {
   document.getElementById('startScreen').style.display = 'none';
   document.getElementById('gameUI').style.display = 'block';
   document.querySelector('.dialogue').style.display = 'block';
+
+currentCustomer = 'Monochromon';
 showResultSequence([
-  `<span class="shop-request">Can you work in my shop? It'll be good for me.</span>`
+  `<span class="customer-name">${currentCustomer}</span><br><br><span class="shop-request">Can you work in my shop? It'll be good for me.</span>`
 ], nextCustomer);
 }
 
@@ -189,18 +195,36 @@ function nextCustomer() {
     return;
   }
 
+  function formatDialogueBlock(customerName, text) {
+  return `
+    <div>
+      <div class="customer-name">${customerName}</div>
+      <div class="dialogue-text">"${text}"</div>
+    </div>
+  `;
+}
+
+function dialogue(text) {
+  return formatDialogueBlock(currentCustomer, text);
+}
+
   negotiationCount = 0;
 
-  if (customersLeft <= 10 && !hasShownMonochromon) {
-    hasShownMonochromon = true;
-    currentCustomer = 'Monochromon';
-    document.getElementById('customerImage').src = imageMap['Monochromon'];
-    const msg = profit >= goal / 2
-      ? "Monochromon says: You're doing well, keep up the good work."
-      : "Monochromon says: There's still plenty of work to be done.";
-    showResultSequence([msg], nextCustomer);
-    return;
-  }
+if (customersLeft <= 10 && !hasShownMonochromon) {
+  hasShownMonochromon = true;
+  currentCustomer = 'Monochromon';
+  document.getElementById('customerImage').src = imageMap[currentCustomer];
+  
+  const msg = profit >= goal / 2
+    ? "The sales are good. We can make some good money."
+    : "The sales are slow. There's still plenty of work to do.";
+
+  showResultSequence([
+    dialogue("Well, we're halfway done."),
+    dialogue(msg)
+  ], nextCustomer);
+  return;
+}
 
   currentCustomer = chooseWeightedCustomer();
   currentItem = chooseWeightedItem(currentCustomer);
@@ -300,26 +324,32 @@ function finalizeSale() {
 
   const roll = Math.random();
 
-  if (roll <= acceptChance) {
-    profit += currentProfit;
-    customersLeft--;
-    showResultSequence([
-  `<span class="customer-name">${currentCustomer}</span> buys the <span class="item-name">${currentItem.name.toLowerCase()}</span> for <span class="profit">${currentProfit} bits</span> profit.`
-], nextCustomer);
-  } else if (roll <= acceptChance + leaveChance) {
-    customersLeft = Math.max(0, customersLeft - 2);
-showResultSequence([
-  `<span class="customer-name">${currentCustomer}</span> <span class="storm-out">storms out</span>.`,
-  `<span class="quiet">It's quiet in here now...</span>`
-], nextCustomer);
-  } else {
-    document.getElementById('finalDecisionGroup').style.display = 'none';
-    document.getElementById('negotiationGroup').style.display = 'none';
-    document.getElementById('renegotiationCustomer').innerText = currentCustomer;
-    document.getElementById('renegotiationMessage').style.display = 'block';
-  }
+ if (roll <= acceptChance) {
+  profit += currentProfit;
+  customersLeft--;
+  showResultSequence([
+    `<span class="customer-name">${currentCustomer}</span> <span class="dialogue-text">buys the ${currentItem.name.toLowerCase()} for ${currentProfit} bits profit.</span>`
+  ], nextCustomer);
+} else if (roll <= acceptChance + leaveChance) {
+  customersLeft = Math.max(0, customersLeft - 2);
+  // Darken background
+  document.getElementById('darkOverlay').style.display = 'block';
 
-  updateDisplay();
+  showResultSequence([
+    `<span class="customer-name">${currentCustomer}</span> <span class="dialogue-text">storms out.</span>`,
+    `<span class="dialogue-text">It's quiet in here now...</span>`
+  ], () => {
+    document.getElementById('darkOverlay').style.display = 'none';
+    nextCustomer();
+  });
+} else {
+  document.getElementById('finalDecisionGroup').style.display = 'none';
+  document.getElementById('negotiationGroup').style.display = 'none';
+  document.getElementById('renegotiationCustomer').innerText = currentCustomer;
+  document.getElementById('renegotiationMessage').style.display = 'block';
+}
+
+updateDisplay();
 }
 
 function returnToNegotiation() {

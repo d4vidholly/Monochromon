@@ -45,7 +45,7 @@
     button {
     font-family: 'Courier New', Courier, monospace;
       padding: 5px 5px;
-      font-size: 18px;
+      font-size: 1.2em;
       cursor: pointer;
       background-color: #222222;
       color: white;
@@ -59,9 +59,7 @@ button:hover    {
 }
 
     .message {
-      margin-top: 20px;
-      margin-bottom: 20px;
-      font-weight: bold;
+      margin: 30px;
     }
 
     #startScreen    {
@@ -93,45 +91,52 @@ button:hover    {
 
 .customer   {
     color: yellow;
+      font-weight: bold;
 }
 
 #currentCustomer  {
   color: yellow;
-}
-
-.dialogue {
-  height: 150px;
-  width: 400px;
-  position: absolute;
-  top: 80%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #ffffff;
-  padding: 1.5em;
-  border: 5px rgb(28, 202, 225) solid;
-  border-radius: 10px;
-  z-index: 10;
-  max-width: 90%;
-  text-align: center;
-  background-color: rgba(26, 26, 26, 0.8);
+    font-weight: bold;
 }
 
 .dialogue  p   {
-    font-size: larger;
+  font-size: 1.2em;
 }
 
 .status   p   {
     font-size: 18px;
 }
 
+.dialogue {
+  width: 90%;
+  max-width: 400px;
+  height: 220px;
+  position: absolute;
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(26, 26, 26, 0.8);
+  padding: 1em;
+  border: 5px rgb(28, 202, 225) solid;
+  border-radius: 10px;
+  z-index: 10;
+  text-align: center;
+  box-sizing: border-box;
+  color: white;
+  font-size: 1rem;
+}
+
 .customer-portrait {
   display: flex;
   justify-content: center;
   margin-top: 2rem;
+  width: 100%;
 }
 
 .customer-portrait img {
-  height: 350px;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
   object-fit: contain;
   border-radius: 10px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 1);
@@ -144,23 +149,23 @@ button:hover    {
 }
 
 .customer-name {
+  font-weight: bold;
   color: yellow;
-  font-size: larger;
+  font-size: 1.2em;
 }
 
-.item-name {
-font-size: larger;
+.dialogue-text  {
+  font-size: 1.2em;
 }
 
-.profit {
-font-size: larger;
-}
-
-.storm-out {
-  font-size: larger;
-}
-
-.quiet {
-  font-size: larger;
-  color: white;
+#darkOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8); /* adjust opacity as needed */
+  z-index: 5; /* make sure it's above background but below UI */
+  display: none; /* hidden by default */
+  pointer-events: none; /* allows clicks to pass through */
 }
