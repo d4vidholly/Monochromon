@@ -42,10 +42,11 @@
     .input-group, .negotiation-group, .final-decision {
       margin: 20px 0;
     }
+    
     button {
     font-family: 'Courier New', Courier, monospace;
       padding: 5px 5px;
-      font-size: 1.2em;
+      font-size: 1.1em;
       cursor: pointer;
       background-color: #222222;
       color: white;
@@ -59,7 +60,7 @@ button:hover    {
 }
 
     .message {
-      margin: 30px;
+      margin: 15px;
     }
 
     #startScreen    {
@@ -80,7 +81,7 @@ button:hover    {
 
 .start-button   {
     color: white;
-    background-color: black;
+    background-color: rgb(9, 9, 9);
     border: 1px solid white;
 }
 
@@ -91,17 +92,12 @@ button:hover    {
 
 .customer   {
     color: yellow;
-      font-weight: bold;
 }
 
 #currentCustomer  {
   color: yellow;
-    font-weight: bold;
 }
 
-.dialogue  p   {
-  font-size: 1.2em;
-}
 
 .status   p   {
     font-size: 18px;
@@ -123,7 +119,8 @@ button:hover    {
   text-align: center;
   box-sizing: border-box;
   color: white;
-  font-size: 1rem;
+  font-size: 1.1rem;
+    line-height: 1.4;
 }
 
 .customer-portrait {
@@ -143,7 +140,6 @@ button:hover    {
 }
 
 .shop-request {
-  font-size: 1.2em;
   color: #ffffff;
   text-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);
 }
@@ -151,12 +147,9 @@ button:hover    {
 .customer-name {
   font-weight: bold;
   color: yellow;
-  font-size: 1.2em;
 }
 
-.dialogue-text  {
-  font-size: 1.2em;
-}
+
 
 #darkOverlay {
   position: fixed;
@@ -164,7 +157,7 @@ button:hover    {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8); /* adjust opacity as needed */
+  background-color: rgba(0, 0, 0, 0.7); /* adjust opacity as needed */
   z-index: 5; /* make sure it's above background but below UI */
   display: none; /* hidden by default */
   pointer-events: none; /* allows clicks to pass through */

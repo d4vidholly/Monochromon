@@ -216,8 +216,8 @@ if (customersLeft <= 10 && !hasShownMonochromon) {
   document.getElementById('customerImage').src = imageMap[currentCustomer];
   
   const msg = profit >= goal / 2
-    ? "The sales are good. We can make some good money."
-    : "The sales are slow. There's still plenty of work to do.";
+    ? "Sales are good. We can make some good money."
+    : "Sales are slow. There's  plenty of work to do.";
 
   showResultSequence([
     dialogue("Well, we're halfway done."),
@@ -297,7 +297,7 @@ if (strategy === 'lower' || currentPrice === basePrice) {
 
   document.getElementById('negotiationGroup').style.display = 'none';
   document.getElementById('finalDecisionGroup').style.display = 'block';
-document.getElementById('reaction').innerHTML = `<span class="customer-name">${currentCustomer}</span> ${reaction} with your offer`;
+document.getElementById('reaction').innerHTML = `<span class="customer-name">${currentCustomer}</span><span class="dialogue-text"> ${reaction} with your offer</span>`;
 
   document.querySelector('#finalDecisionGroup button').innerText = `Offer for ${currentPrice} bits`;
 
@@ -425,13 +425,19 @@ function showResultSequence(messages, after = nextCustomer) {
 
 function endGame() {
   currentCustomer = 'Monochromon';
-  document.getElementById('customerImage').src = imageMap['Monochromon'];
-  const result = profit >= goal ? 
-    "You actually did it. Maybe there's hope for the island yet." :
-    profit >= goal / 2 ? 
-    "Not bad. You're improving, but there's room for growth." :
-    "That performance was underwhelming. You need more practice.";
-  showResultSequence([result, `You made ${profit} bits.`, "Come back tomorrow to try again"], restartGame);
+  document.getElementById('customerImage').src = imageMap[currentCustomer];
+
+  const result = profit >= goal
+    ? "You actually did it. Maybe there's hope for the island yet."
+    : profit >= goal / 2
+      ? "Not bad. You're improving, but there's room for growth."
+      : "That performance was underwhelming. You need more practice.";
+
+  showResultSequence([
+    `<span class="customer-name">${currentCustomer}</span><br><br><span class="dialogue-text">${result}</span>`,
+    `<span class="dialogue-text">You made ${profit} bits.</span>`,
+    `<span class="dialogue-text">Come back tomorrow to try again</span>`
+  ], restartGame);
 }
 
 function restartGame() {
